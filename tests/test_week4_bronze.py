@@ -29,18 +29,21 @@ def _run_cell(spark, pattern):
 def test_stores_insert_overwrite(spark):
     _run_cell(spark, "bronze_stores_load")
     names = {r.name for r in spark.sql("SELECT name FROM bronze.stores").collect()}
+    # names is a Python set of strings
     # TODO: assert that the expected store names are present in `names`
 
 
 def test_categories_insert_overwrite(spark):
     _run_cell(spark, "bronze_categories_load")
     ids = {r.category_id for r in spark.sql("SELECT category_id FROM bronze.categories").collect()}
+    # ids is a Python set of strings
     # TODO: assert that the expected category IDs ('1', '3', '11') are present in `ids`
 
 
 def test_books_insert_overwrite(spark):
     _run_cell(spark, "bronze_books_load")
     rows = spark.sql("SELECT ingestion_timestamp, source_filename FROM bronze.books").collect()
+    # rows is a list of Row objects; rows[0].ingestion_timestamp and rows[0].source_filename are the audit columns
     # TODO: assert that at least one row exists and every row has non-null ingestion_timestamp and source_filename
 
 
@@ -51,12 +54,14 @@ def test_books_insert_overwrite(spark):
 def test_online_orders_merge(spark):
     _run_cell(spark, "bronze_online_orders_merge")
     row = spark.sql("SELECT * FROM bronze.online_orders WHERE order_id = 'ONL-001'").collect()
+    # row is a list of Row objects; row[0].customer_email is a string
     # TODO: assert that exactly one row exists for ONL-001 and it has the correct customer_email
 
 
 def test_instore_orders_merge(spark):
     _run_cell(spark, "bronze_instore_orders_merge")
     row = spark.sql("SELECT * FROM bronze.instore_orders WHERE order_id = 'INS-001'").collect()
+    # row is a list of Row objects; row[0].cashier_name is a string
     # TODO: assert that exactly one row exists for INS-001 and it has the correct cashier_name
 
 
@@ -65,6 +70,7 @@ def test_merge_is_idempotent(spark):
     count_after_first = spark.sql("SELECT COUNT(*) AS cnt FROM bronze.online_orders").collect()[0].cnt
     _run_cell(spark, "bronze_online_orders_merge")
     count_after_second = spark.sql("SELECT COUNT(*) AS cnt FROM bronze.online_orders").collect()[0].cnt
+    # count_after_first and count_after_second are integers
     # TODO: assert that count_after_first equals count_after_second (running MERGE twice should not add rows)
 
 
@@ -75,6 +81,7 @@ def test_merge_is_idempotent(spark):
 def test_stores_has_audit_columns(spark):
     _run_cell(spark, "bronze_stores_load")
     cols = spark.sql("SELECT * FROM bronze.stores").columns
+    # cols is a list of strings
     # TODO: assert that 'ingestion_timestamp' and 'source_filename' are both in cols
 
 
@@ -88,6 +95,7 @@ def test_categories_hierarchy_preserved(spark):
     fiction = [r for r in rows if r.category_id == "1"][0]
     sci_fi = [r for r in rows if r.category_id == "3"][0]
     space_opera = [r for r in rows if r.category_id == "11"][0]
+    # fiction, sci_fi, space_opera are Row objects; .parent_category_id is a string
     # TODO: assert the correct parent_category_id for each:
     # fiction (top-level) should have empty string, sci_fi should reference fiction, space_opera should reference sci_fi
 
@@ -96,12 +104,14 @@ def test_online_orders_decimal_precision(spark):
     _run_cell(spark, "bronze_online_orders_merge")
     schema = spark.sql("SELECT * FROM bronze.online_orders").schema
     total_amount_field = [f for f in schema.fields if f.name == "total_amount"][0]
+    # total_amount_field is a StructField; str(total_amount_field.dataType) is a string
     # TODO: assert that "DecimalType" is in str(total_amount_field.dataType)
 
 
 def test_instore_orders_nullable_email(spark):
     _run_cell(spark, "bronze_instore_orders_merge")
     customer_email = spark.sql("SELECT customer_email FROM bronze.instore_orders").collect()[0].customer_email
+    # customer_email is None or a string
     # TODO: assert that customer_email is None (the test data has a NULL email that should be preserved in bronze)
 
 
@@ -109,12 +119,14 @@ def test_instore_orders_has_cashier_name(spark):
     _run_cell(spark, "bronze_instore_orders_merge")
     cols = spark.sql("SELECT * FROM bronze.instore_orders").columns
     cashier_name = spark.sql("SELECT cashier_name FROM bronze.instore_orders").collect()[0].cashier_name
+    # cols is a list of strings; cashier_name is a string
     # TODO: assert that 'cashier_name' is in cols and cashier_name equals the expected value
 
 
 def test_books_preserves_category_reference(spark):
     _run_cell(spark, "bronze_books_load")
     category_ids = [r.category_id for r in spark.sql("SELECT category_id FROM bronze.books").collect()]
+    # category_ids is a list of strings
     # TODO: assert that all books reference category_id '11' (Space Opera)
 
 
@@ -144,6 +156,7 @@ def test_merge_updates_existing_rows(spark):
     _run_cell(spark, "bronze_online_orders_merge")
     count = spark.sql("SELECT COUNT(*) AS cnt FROM bronze.online_orders").collect()[0].cnt
     total_amount = spark.sql("SELECT total_amount FROM bronze.online_orders").collect()[0].total_amount
+    # count is an integer; total_amount is a Decimal
     # TODO: assert that count is still 1 (MERGE updated, not inserted) and total_amount is now Decimal("99.99")
 
 

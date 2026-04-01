@@ -30,6 +30,7 @@ def _run_cell(spark, pattern):
 def test_dim_customer_from_silver(spark):
     _run_cell(spark, "gold_dim_customer_merge")
     emails = {r.email for r in spark.sql("SELECT email FROM gold.dim_customer").collect()}
+    # emails is a Python set of strings
     # TODO: assert that 'alice@example.com' and 'bob@example.com' are in `emails`
 
 
@@ -39,6 +40,7 @@ def test_dim_customer_sentinel(spark):
     name = spark.sql(
         "SELECT name FROM gold.dim_customer WHERE email = 'in-store'"
     ).collect()[0].name
+    # name is a string
     # TODO: assert that name equals 'In-Store Customer'
 
 
@@ -49,6 +51,7 @@ def test_dim_customer_sentinel(spark):
 def test_dim_store_from_silver(spark):
     _run_cell(spark, "gold_dim_store_merge")
     store_nbrs = {r.store_nbr for r in spark.sql("SELECT store_nbr FROM gold.dim_store").collect()}
+    # store_nbrs is a Python set of strings
     # TODO: assert that 'S001' is in `store_nbrs`
 
 
@@ -58,6 +61,7 @@ def test_dim_store_sentinel(spark):
     name = spark.sql(
         "SELECT name FROM gold.dim_store WHERE store_nbr = 'online'"
     ).collect()[0].name
+    # name is a string
     # TODO: assert that name equals 'Online'
 
 
@@ -68,6 +72,7 @@ def test_dim_store_sentinel(spark):
 def test_dim_book_flattens_hierarchy(spark):
     _run_cell(spark, "gold_dim_book_merge")
     book = spark.sql("SELECT subgenre, genre, category FROM gold.dim_book").collect()[0]
+    # book is a Row object; .subgenre, .genre, .category are strings
     # TODO: assert that book.subgenre, book.genre, and book.category are correctly flattened:
     # subgenre = 'Space Opera', genre = 'Science Fiction', category = 'Fiction'
 
@@ -82,6 +87,7 @@ def test_fact_sales_all_items_present(spark):
     ins_002_count = spark.sql(
         "SELECT COUNT(*) AS cnt FROM gold.fact_sales WHERE order_id = 'INS-002'"
     ).collect()[0].cnt
+    # order_ids is a Python set of strings; ins_002_count is an integer
     # TODO: assert ONL-001, ONL-002, INS-001 are in order_ids, and ins_002_count equals 2
     # (INS-002 had 2 line items, so it should produce 2 fact rows)
 
@@ -92,6 +98,7 @@ def test_fact_sales_line_total(spark):
         SELECT * FROM gold.fact_sales
         WHERE line_total != quantity * unit_price
     """).collect()
+    # mismatches is a list of Row objects (you want it to have length 0)
     # TODO: assert that mismatches is empty (line_total should equal quantity * unit_price for every row)
 
 
@@ -105,8 +112,8 @@ def test_fact_sales_fk_lookups(spark):
             SUM(CASE WHEN store_id IS NULL THEN 1 ELSE 0 END) AS null_store
         FROM gold.fact_sales
     """).collect()[0]
-    # TODO: assert that nulls.null_cust, null_book, null_date, and null_store are all 0
-    # (every fact row should resolve to a valid dimension surrogate key)
+    # nulls is a Row object; .null_cust, .null_book, .null_date, .null_store are integers
+    # TODO: assert that nulls.null_cust, nulls.null_book, nulls.null_date, and nulls.null_store are all 0
 
 
 def test_fact_sales_degenerate_dims(spark):
@@ -118,6 +125,7 @@ def test_fact_sales_degenerate_dims(spark):
     """).collect()
     order_ids = {r.order_id for r in rows}
     channels = {r.order_channel for r in rows}
+    # order_ids and channels are Python sets of strings; rows is a list of Row objects
     # TODO: assert expected order IDs are present, channels contains {'online', 'in-store'},
     # and every row has a non-null payment_method
 

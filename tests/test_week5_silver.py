@@ -66,6 +66,7 @@ def test_stores_merge(spark):
     _run_silver_stores(spark)
     row = spark.sql("SELECT store_nbr, name FROM silver.stores WHERE store_nbr = 'S001'").collect()
     col_names = spark.sql("SELECT * FROM silver.stores").columns
+    # row is a list of Row objects; row[0].name is a string; col_names is a list of strings
     # TODO: assert that exactly one row exists for S001 with name 'Downtown Books',
     # and that 'ingestion_timestamp' and 'source_filename' are NOT in col_names
 
@@ -79,6 +80,7 @@ def test_categories_merge(spark):
     rows = spark.sql("SELECT category_id, parent_category_id FROM silver.categories").collect()
     space_opera = [r for r in rows if r.category_id == "11"][0]
     fiction = [r for r in rows if r.category_id == "1"][0]
+    # space_opera and fiction are Row objects; .parent_category_id is a string
     # TODO: assert space_opera.parent_category_id and fiction.parent_category_id are correct
 
 
@@ -89,6 +91,7 @@ def test_categories_merge(spark):
 def test_books_filters_invalid_isbn(spark):
     _run_silver_books(spark)
     isbns = {r.isbn for r in spark.sql("SELECT isbn FROM silver.books").collect()}
+    # isbns is a Python set of strings
     # TODO: assert valid ISBNs are in `isbns` and 'BADISBN' is not
 
 
@@ -102,7 +105,9 @@ def test_books_trims_whitespace(spark):
     row = spark.sql(
         "SELECT title, author, category_id FROM silver.books WHERE isbn = '978-0-00-000099-9'"
     ).collect()
-    # TODO: assert that row has exactly 1 result and title, author, category_id are trimmed of whitespace
+    # row is a list of Row objects; .title, .author, .category_id are strings
+    # TODO: assert that row has exactly 1 result and row[0].title, row[0].author, row[0].category_id
+    # are trimmed of whitespace
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +119,8 @@ def test_customers_takes_most_recent(spark):
     alice = spark.sql(
         "SELECT email, name, address, city FROM silver.customers WHERE email = 'alice@example.com'"
     ).collect()
-    # TODO: assert alice has exactly 1 row (deduplication worked) and her name, address, city
+    # alice is a list of Row objects; .name, .address, .city are strings
+    # TODO: assert alice has exactly 1 row (deduplication worked) and alice[0].name, .address, .city
     # match the MORE RECENT order (ONL-002, 2025-07-15): 'Alice New', '200 New Ave', 'NewCity'
 
 
@@ -126,6 +132,7 @@ def test_orders_unified(spark):
     _run_silver_orders(spark)
     order_ids = {r.order_id for r in spark.sql("SELECT order_id FROM silver.orders").collect()}
     channels = {r.order_channel for r in spark.sql("SELECT order_channel FROM silver.orders").collect()}
+    # order_ids and channels are Python sets of strings
     # TODO: assert all 4 order IDs (ONL-001, ONL-002, INS-001, INS-002) are in order_ids,
     # and channels contains exactly {'online', 'in-store'}
 
@@ -135,6 +142,7 @@ def test_orders_online_sentinel(spark):
     store_nbrs = [r.store_nbr for r in spark.sql(
         "SELECT store_nbr FROM silver.orders WHERE order_channel = 'online'"
     ).collect()]
+    # store_nbrs is a list of strings
     # TODO: assert that all store_nbrs for online orders equal 'online'
 
 
@@ -146,6 +154,7 @@ def test_orders_instore_null_email_sentinel(spark):
     customer_email_2 = spark.sql(
         "SELECT customer_email FROM silver.orders WHERE order_id = 'INS-002'"
     ).collect()[0].customer_email
+    # customer_email and customer_email_2 are strings
     # TODO: assert that customer_email (INS-001, which had NULL) equals 'in-store',
     # and customer_email_2 (INS-002, which had a real email) equals 'bob@example.com'
 
@@ -160,6 +169,7 @@ def test_order_items_exploded(spark):
     ins_002_count = spark.sql(
         "SELECT COUNT(*) AS cnt FROM silver.order_items WHERE order_id = 'INS-002'"
     ).collect()[0].cnt
+    # order_ids is a Python set of strings; ins_002_count is an integer
     # TODO: assert ONL-001 and INS-001 are in order_ids, and ins_002_count equals 2
     # (INS-002 had 2 items in its JSON array, so it should explode into 2 rows)
 
@@ -167,6 +177,7 @@ def test_order_items_exploded(spark):
 def test_order_items_drops_title(spark):
     _run_silver_order_items(spark)
     cols = spark.sql("SELECT * FROM silver.order_items").columns
+    # cols is a list of strings
     # TODO: assert that 'title' is not in cols (title is redundant with silver.books and should be dropped)
 
 
@@ -174,6 +185,7 @@ def test_order_items_decimal_cast(spark):
     _run_silver_order_items(spark)
     schema = spark.sql("SELECT * FROM silver.order_items").schema
     unit_price_field = [f for f in schema.fields if f.name == "unit_price"][0]
+    # unit_price_field is a StructField; str(unit_price_field.dataType) is a string
     # TODO: assert that "DecimalType" is in str(unit_price_field.dataType)
 
 
