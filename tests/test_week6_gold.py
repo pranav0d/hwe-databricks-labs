@@ -59,7 +59,7 @@ def test_dim_book_flattens_hierarchy(spark):
 # Tests — gold.fact_sales
 # ---------------------------------------------------------------------------
 
-def test_fact_sales_row_count(spark):
+def test_fact_sales_all_items_present(spark):
     # TODO: Implement this test
     pass
 
