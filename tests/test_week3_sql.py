@@ -59,7 +59,7 @@ def test_recent_hires(spark):
     """Verify that recent hires query filters by date correctly."""
     rows = _run_cell(spark, "recent_hires").collect()
     # rows is a list of Row objects; rows[0].employee_id is a string
-    # TODO: assert the correct number of recent hires are returned and check which employee_id appears
+    # TODO: assert exactly 1 row is returned and the employee_id is 'EMP-006'
 
 
 def test_average_salary_by_department(spark):
@@ -128,12 +128,12 @@ def week3_test_data(spark):
 
     spark.sql("""
         INSERT INTO week3_testing.employees VALUES
-        ('EMP-001', 'John Smith', 'john.smith@company.com', 'Engineering', 85000.00, CURRENT_DATE() - INTERVAL 365 DAYS),
-        ('EMP-002', 'Jane Doe', 'jane.doe@company.com', 'Sales', 65000.00, CURRENT_DATE() - INTERVAL 730 DAYS),
-        ('EMP-003', 'Bob Wilson', 'invalid-email', 'Marketing', 55000.00, CURRENT_DATE() - INTERVAL 1095 DAYS),
-        ('EMP-004', 'Alice Johnson', 'alice.johnson@company.com', 'Engineering', 120000.00, CURRENT_DATE() - INTERVAL 180 DAYS),
-        ('EMP-005', 'Charlie Brown', '', 'HR', 45000.00, CURRENT_DATE() - INTERVAL 1825 DAYS),
-        ('EMP-006', 'Diana Prince', NULL, 'Sales', 75000.00, CURRENT_DATE() - INTERVAL 10 DAYS)
+        ('EMP-001', 'John Smith', 'john.smith@company.com', 'Engineering', 85000.00, DATE('2025-01-15')),
+        ('EMP-002', 'Jane Doe', 'jane.doe@company.com', 'Sales', 65000.00, DATE('2024-03-20')),
+        ('EMP-003', 'Bob Wilson', 'invalid-email', 'Marketing', 55000.00, DATE('2023-06-10')),
+        ('EMP-004', 'Alice Johnson', 'alice.johnson@company.com', 'Engineering', 120000.00, DATE('2025-08-01')),
+        ('EMP-005', 'Charlie Brown', '', 'HR', 45000.00, DATE('2020-05-12')),
+        ('EMP-006', 'Diana Prince', NULL, 'Sales', 75000.00, DATE('2026-03-15'))
     """)
 
     # Create and populate departments table
