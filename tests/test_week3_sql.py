@@ -1,16 +1,13 @@
-"""Tests for Week 3 — Basic SQL query testing.
+"""Tests for Week 3 — INSERT statement testing.
 
-This test file demonstrates how to write tests for SQL queries
-in Jupyter notebooks using the tagging framework.
+Each test runs an INSERT from the lab notebook, then queries
+filtered_employees to verify the correct rows were inserted.
 
 Uses Employee/HR domain data (different from bookstore in weeks 4-6).
 """
 
 import os
-from decimal import Decimal
-
 import pytest
-
 from tests.notebook_utils import find_cell
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,55 +29,31 @@ def _run_cell(spark, pattern):
 # ===========================================================================
 
 def test_valid_email_filter(spark):
-    """Verify that email filter only returns valid email formats."""
-    rows = _run_cell(spark, "valid_email_filter").collect()
-    emails = [r.email for r in rows]
-    # rows is a list of Row objects; emails is a list of strings
-    # TODO: assert the correct number of employees are returned, every email is not None, and contains '@'
-
-
-def test_count_employees(spark):
-    """Verify that employee count query returns correct count."""
-    row = _run_cell(spark, "count_employees").collect()[0]
-    # row is a Row object; row.total_employees is an integer
-    # TODO: assert row.total_employees equals the expected total number of employees
+    """Verify that only employees with valid emails are inserted."""
+    _run_cell(spark, "valid_email_filter")
+    rows = spark.sql("SELECT * FROM week3_testing.filtered_employees").collect()
+    # TODO: assert len(rows) equals the number of employees with a valid email
 
 
 def test_employees_in_salary_range(spark):
-    """Verify that salary range filter returns correct employees."""
-    rows = _run_cell(spark, "employees_in_salary_range").collect()
-    salaries = [row.salary for row in rows]
-    # rows is a list of Row objects; salaries is a list of Decimal values
-    # TODO: assert the correct number of employees are returned and all salaries are between 50000 and 100000
+    """Verify that only employees in the salary range are inserted."""
+    _run_cell(spark, "employees_in_salary_range")
+    rows = spark.sql("SELECT * FROM week3_testing.filtered_employees").collect()
+    # TODO: assert len(rows) equals the number of employees with salary between $50,000 and $100,000
 
 
 def test_recent_hires(spark):
-    """Verify that recent hires query filters by date correctly."""
-    rows = _run_cell(spark, "recent_hires").collect()
-    # rows is a list of Row objects; rows[0].employee_id is a string
-    # TODO: assert exactly 1 row is returned and the employee_id is 'EMP-006'
+    """Verify that only recent hires are inserted."""
+    _run_cell(spark, "recent_hires")
+    rows = spark.sql("SELECT * FROM week3_testing.filtered_employees").collect()
+    # TODO: assert len(rows) equals 1 and rows[0].employee_id equals 'EMP-006'
 
 
-def test_average_salary_by_department(spark):
-    """Verify that average salary by department is calculated correctly."""
-    rows = _run_cell(spark, "average_salary_by_department").collect()
-    dept_avgs = {row.department: row.avg_salary for row in rows}
-    # dept_avgs is a dict mapping string (department name) to Decimal (average salary)
-    # TODO: assert the correct number of departments are returned and check specific avg_salary values
-    # (hint: Engineering avg = 102500, Sales avg = 70000)
-
-
-# ---------------------------------------------------------------------------
-# Additional validation tests
-# ---------------------------------------------------------------------------
-
-def test_email_filter_returns_expected_columns(spark):
-    """Verify that email filter query returns the expected columns."""
-    cols = _run_cell(spark, "valid_email_filter").columns
-    # cols is a list of strings
-    # TODO: assert that all expected columns are present:
-    # employee_id, name, email, department, salary, hire_date
-
+def test_engineering_department_filter(spark):
+    """Verify that only Engineering employees are inserted."""
+    _run_cell(spark, "engineering_department_filter")
+    rows = spark.sql("SELECT * FROM week3_testing.filtered_employees").collect()
+    # TODO: assert len(rows) equals the number of Engineering employees
 
 
 # ===========================================================================
@@ -95,10 +68,8 @@ def week3_test_data(spark):
     This fixture runs before every test in this module, creating the
     schema, tables, and test data that SQL queries will read from.
     """
-    # Create schema
     spark.sql("CREATE SCHEMA IF NOT EXISTS week3_testing")
 
-    # Create and populate employees table
     spark.sql("""
         CREATE OR REPLACE TABLE week3_testing.employees (
             employee_id STRING,
@@ -120,20 +91,13 @@ def week3_test_data(spark):
         ('EMP-006', 'Diana Prince', NULL, 'Sales', 75000.00, DATE('2026-03-15'))
     """)
 
-    # Create and populate departments table
     spark.sql("""
-        CREATE OR REPLACE TABLE week3_testing.departments (
-            dept_id STRING,
-            dept_name STRING,
-            manager_name STRING,
-            budget DECIMAL(12,2)
+        CREATE OR REPLACE TABLE week3_testing.filtered_employees (
+            employee_id STRING,
+            name STRING,
+            email STRING,
+            department STRING,
+            salary DECIMAL(10,2),
+            hire_date DATE
         ) USING DELTA
-    """)
-
-    spark.sql("""
-        INSERT INTO week3_testing.departments VALUES
-        ('DEPT-001', 'Engineering', 'Sarah Connor', 500000.00),
-        ('DEPT-002', 'Sales', 'Michael Scott', 300000.00),
-        ('DEPT-003', 'Marketing', 'Don Draper', 250000.00),
-        ('DEPT-004', 'HR', 'Toby Flenderson', 150000.00)
     """)
