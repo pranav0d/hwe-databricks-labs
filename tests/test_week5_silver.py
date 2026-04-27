@@ -145,6 +145,7 @@ def _run_silver_books(spark):
 
 
 def _run_silver_customers(spark):
+    _run_cell(spark, "silver_customers_most_recent_view")
     _run_cell(spark, "silver_customers_merge")
 
 
